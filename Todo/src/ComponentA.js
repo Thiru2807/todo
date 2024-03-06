@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { TiTickOutline } from "react-icons/ti";
 import { AiOutlineDelete } from "react-icons/ai";
+import axios from 'axios';
 
 function ComponentA() {
     const {
@@ -13,17 +14,17 @@ function ComponentA() {
 
     const addTodoList = async (data) => {
         try {
-            const response = await fetch('http://localhost:4000/addtodo', {
-                method: 'POST',
+            const response = await axios.post('http://localhost:4000/addtodo', data, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data),
             });
-            if (!response.ok) {
+
+            if (!response.status === 200) {
                 throw new Error('Failed to add todo');
             }
-            const responseData = await response.text();
+
+            const responseData = response.data;
             console.log(responseData);
             setSubmittedValues([...submittedValues, { title: data.title, complete: data.complete }]);
             reset();
@@ -34,11 +35,13 @@ function ComponentA() {
 
     const getTodoList = async () => {
         try {
-            const response = await fetch('http://localhost:4000/gettodo');
-            if (!response.ok) {
+            const response = await axios.get('http://localhost:4000/gettodo');
+
+            if (!response.status === 200) {
                 throw new Error('Failed to fetch todos');
             }
-            const responseData = await response.json();
+
+            const responseData = response.data;
             setSubmittedValues(responseData);
         } catch (error) {
             console.error('Error fetching todos:', error.message);
@@ -51,16 +54,16 @@ function ComponentA() {
 
     const handleCross = async (id, crossed) => {
         try {
-            const response = await fetch(`http://localhost:4000/updatetodo/${id}`, {
-                method: 'PUT',
+            const response = await axios.put(`http://localhost:4000/updatetodo/${id}`, { complete: !crossed }, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ complete: !crossed }),
             });
-            if (!response.ok) {
+
+            if (!response.status === 200) { // corrected comparison
                 throw new Error('Failed to update todo');
             }
+
             const updatedValues = submittedValues.map(item =>
                 item.id === id ? { ...item, complete: !crossed } : item
             );
@@ -69,22 +72,23 @@ function ComponentA() {
             console.error('Error updating todo:', error.message);
         }
     };
-    
+
 
     const handleDelete = async (id) => {
         try {
-            const response = await fetch(`http://localhost:4000/deleteTodo/${id}`, {
-                method: 'DELETE',
-            });
-            if (!response.ok) {
+            const response = await axios.delete(`http://localhost:4000/deleteTodo/${id}`);
+
+            if (!response.status === 200) { // corrected comparison
                 throw new Error('Failed to delete todo');
             }
+
             const updatedValues = submittedValues.filter(item => item.id !== id);
             setSubmittedValues(updatedValues);
         } catch (error) {
             console.error('Error deleting todo:', error.message);
         }
     };
+
 
     return (
         <>
@@ -113,7 +117,7 @@ function ComponentA() {
                                         <p>{item.title}</p>
                                     </div>
                                     <button className="ml-4 h-10 w-[40px] text-white bg-green-500 hover:bg-green-600 rounded-md flex items-center justify-center" onClick={() => handleCross(item.id, item.complete)}>
-                                        <TiTickOutline className="h-7 w-7"/>
+                                        <TiTickOutline className="h-7 w-7" />
                                     </button>
                                     <button className="ml-4 h-10 w-[40px] text-white bg-red-500 hover:bg-red-600 rounded-md flex items-center justify-center" onClick={() => handleDelete(item.id)}>
                                         <AiOutlineDelete className="h-6 w-6" />
