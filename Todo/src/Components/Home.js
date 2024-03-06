@@ -4,7 +4,7 @@ import { TiTickOutline } from "react-icons/ti";
 import { AiOutlineDelete } from "react-icons/ai";
 import axios from 'axios';
 
-function ComponentA() {
+function Home() {
     const {
         register,
         handleSubmit,
@@ -52,33 +52,34 @@ function ComponentA() {
         getTodoList();
     }, []);
 
-    const handleCross = async (id, crossed) => {
+    const updateTodo = async (id, crossed) => {
         try {
-            const response = await axios.put(`http://localhost:4000/updatetodo/${id}`, { complete: !crossed }, {
+            const response = await axios.put(`http://localhost:4000/updatetodo/${id}`, 
+            { complete: !crossed }, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
             });
 
-            if (!response.status === 200) { // corrected comparison
+            if (!response.status === 200) { 
                 throw new Error('Failed to update todo');
             }
 
             const updatedValues = submittedValues.map(item =>
                 item.id === id ? { ...item, complete: !crossed } : item
             );
-            setSubmittedValues([...updatedValues]); // Force re-render by creating a new array reference
+            setSubmittedValues([...updatedValues]); 
         } catch (error) {
             console.error('Error updating todo:', error.message);
         }
     };
 
 
-    const handleDelete = async (id) => {
+    const deleteTodo = async (id) => {
         try {
             const response = await axios.delete(`http://localhost:4000/deleteTodo/${id}`);
 
-            if (!response.status === 200) { // corrected comparison
+            if (!response.status === 200) { 
                 throw new Error('Failed to delete todo');
             }
 
@@ -92,9 +93,9 @@ function ComponentA() {
 
     return (
         <>
-            <div className="flex justify-center">
+            <div className="flex justify-center items-center">
                 <div className="w-[800px] bg-slate-200">
-                    <h1 className="mt-4 font-bold text-2xl">To-Do Form</h1>
+                    <h1 className="flex justify-center mt-4 font-bold text-2xl">To-Do Form</h1>
                     <div className="flex flex-row justify-center">
                         <form onSubmit={handleSubmit(addTodoList)}>
                             <input
@@ -116,10 +117,10 @@ function ComponentA() {
                                     <div className={`flex items-center justify-center rounded-md h-10 w-[500px] ${item.complete ? 'bg-black' : 'bg-slate-500'} text-white ${item.complete ? 'line-through' : ''}`}>
                                         <p>{item.title}</p>
                                     </div>
-                                    <button className="ml-4 h-10 w-[40px] text-white bg-green-500 hover:bg-green-600 rounded-md flex items-center justify-center" onClick={() => handleCross(item.id, item.complete)}>
+                                    <button className="ml-4 h-10 w-[40px] text-white bg-green-500 hover:bg-green-600 rounded-md flex items-center justify-center" onClick={() => updateTodo(item.id, item.complete)}>
                                         <TiTickOutline className="h-7 w-7" />
                                     </button>
-                                    <button className="ml-4 h-10 w-[40px] text-white bg-red-500 hover:bg-red-600 rounded-md flex items-center justify-center" onClick={() => handleDelete(item.id)}>
+                                    <button className="ml-4 h-10 w-[40px] text-white bg-red-500 hover:bg-red-600 rounded-md flex items-center justify-center" onClick={() => deleteTodo(item.id)}>
                                         <AiOutlineDelete className="h-6 w-6" />
                                     </button>
                                 </div>
@@ -132,4 +133,4 @@ function ComponentA() {
     );
 }
 
-export default ComponentA;
+export default Home;
