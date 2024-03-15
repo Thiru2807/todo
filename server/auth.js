@@ -19,19 +19,13 @@ router.post("/signup", async (req, res) => {
         const phoneNumber = req.body['phone_number'];
         const email = req.body['email'];
         const password = req.body['password']
-        const hashedPassword = await bcrypt.hash(password,10)
-        const insertSTMT =  `INSERT INTO public.users (user_name, phone_number, email, password)
-        VALUES ($1, $2, $3, $4);`
-        const values = [name,phoneNumber,email,hashedPassword]
-    pool.query(insertSTMT,values).then((response)=>{
-        console.log('Data Inserted');
-        console.log(response);
-    }).catch((err)=>{
-        console.log(err);
-    });
-
-    console.log("Response is"+req.body);
-    res.send("Responce received : " + req.body);
+        const hashedPassword = await bcrypt.hash(password, 10)
+        const result = await pool.query(
+            `INSERT INTO public.users (user_name, phone_number, email, password)
+         VALUES ($1, $2, $3, $4) RETURNING *;`,
+         [name, phoneNumber, email, hashedPassword]
+        )
+        res.status(201).json(result.rows[0]);
     } catch (error) {
         console.log(error);
         console.error(error.message);
@@ -48,6 +42,7 @@ router.post("/signin", async (req, res) => {
         );
 
         const user = result.rows[0];
+        // console.log('User',user);
         if (!user) {
             return res.status(400).json(
                 {
@@ -65,7 +60,11 @@ router.post("/signin", async (req, res) => {
             );
         }
 
-        const token = jwt.sign({ userId: user.id }, SECRET_KEY, {
+        const token = jwt.sign(
+            {
+                userId: user.user_id,
+            }, 
+            SECRET_KEY, {
             expiresIn: '1h'
         });
         res.json({ token });
@@ -96,5 +95,24 @@ function verifyToken(req, res, next) {
 router.get("/user", verifyToken, (req, res) => {
     res.json({ user: req.user });
 });
+
+router.get("/user/:id", async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const result = await pool.query(
+            "SELECT * FROM users WHERE user_id = $1",
+            [userId]
+        );
+        const user = result.rows[0];
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.json({ user });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 
 module.exports = router;
