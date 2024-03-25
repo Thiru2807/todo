@@ -42,34 +42,24 @@ router.post("/signin", async (req, res) => {
         );
 
         const user = result.rows[0];
-        // console.log('User',user);
+
         if (!user) {
-            return res.status(400).json(
-                {
-                    message: 'Invalid Credentials'
-                }
-            );
+            return res.status(400).json({ message: 'Invalid Credentials' });
         }
 
         const isPasswordMatch = await bcrypt.compare(password, user.password);
+
         if (!isPasswordMatch) {
-            return res.status(400).json(
-                {
-                    message: 'Password is not correct'
-                }
-            );
+            return res.status(400).json({ message: 'Password is not correct' });
         }
 
         const token = jwt.sign(
-            {
-                userId: user.user_id,
-            }, 
-            SECRET_KEY, {
-            expiresIn: '1h'
-        });
+            { userId: user.user_id },
+            SECRET_KEY,
+            { expiresIn: '1h' }
+        );
         res.json({ token });
     } catch (error) {
-        console.log(error);
         console.error(error.message);
         res.status(500).send('Server Error');
     }
@@ -112,6 +102,19 @@ router.get("/user/:id", async (req, res) => {
         console.error(error.message);
         res.status(500).send('Server Error');
     }
+});
+
+router.get("/users", (req, res) => {
+    pool.query('SELECT * FROM users;')
+        .then((response) => {
+            console.log('User list retrieved successfully');
+            console.log(response.rows);
+            res.json(response.rows); // Sending the todo items as JSON
+        })
+        .catch((err) => {
+            console.log(err);
+            res.status(500).send("Error retrieving User list");
+        });
 });
 
 
