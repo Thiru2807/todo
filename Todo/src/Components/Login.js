@@ -2,6 +2,8 @@ import { useForm } from "react-hook-form";
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import {jwtDecode} from "jwt-decode";
+
 function Login() {
     const {
         register,
@@ -15,8 +17,14 @@ function Login() {
     async function onSubmit(data) {
         try {
             const response = await axios.post("http://localhost:4000/signin", data);
-            console.log("Login successful:", response.data);
-            navigate('/home');
+            // console.log("Login successful:", response.data);
+            const token = response.data.token;
+            console.log(token);
+            const decodedToken = jwtDecode(token);
+            const userId = decodedToken.userId;
+            console.log(userId);
+            // const userData = response.data
+            navigate('/home', {state: {data:userId}} );
         } catch (error) {
             if (error.response) {
                 console.error("Server responded with an error:", error.response.data);
