@@ -1,16 +1,22 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { TiTickOutline } from "react-icons/ti";
-import { AiOutlineDelete } from "react-icons/ai";
+import { AiOutlineEdit } from "react-icons/ai";
 import axios from 'axios';
-
+import profile from '../images/profile.jpg';
+import { useLocation } from "react-router-dom"
 function Home() {
+    const location = useLocation();
+    const user_id = location.state.data;
+    // console.log('haaiiiiiiiiii ' + user_id);
     const {
         register,
         handleSubmit,
         reset,
     } = useForm();
     const [submittedValues, setSubmittedValues] = useState([]);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [userId, setUserId] = useState(null);
 
     const addTodoList = async (data) => {
         try {
@@ -26,7 +32,7 @@ function Home() {
 
             const responseData = response.data;
             console.log(responseData);
-            setSubmittedValues([...submittedValues, { title: data.title, complete: data.complete }]);
+            setSubmittedValues([...submittedValues, { title: data.title, complete: data.complete, user_id: data.user_id }]);
             reset();
         } catch (error) {
             console.error('Error adding todo:', error.message);
@@ -52,23 +58,46 @@ function Home() {
         getTodoList();
     }, []);
 
+    useEffect(() => {
+        const getUserDetail = async () => {
+            try {
+                console.log('user id is ' + user_id);
+                const response = await axios.get(`http://localhost:4000/user/${user_id}`);
+                console.log('hellooo')
+                if (response.status === 200) {
+                    const responseData = response.data;
+                    console.log(responseData);
+                    setUserId(responseData);
+                } else {
+                    throw new Error('Failed to fetch user details');
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error.message);
+            }
+        };
+
+        if (user_id) {
+            getUserDetail();
+        }
+    }, [user_id]);
+
     const updateTodo = async (id, crossed) => {
         try {
-            const response = await axios.put(`http://localhost:4000/updatetodo/${id}`, 
-            { complete: !crossed }, {
+            const response = await axios.put(`http://localhost:4000/updatetodo/${id}`,
+                { complete: !crossed }, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
             });
 
-            if (!response.status === 200) { 
+            if (!response.status === 200) {
                 throw new Error('Failed to update todo');
             }
 
             const updatedValues = submittedValues.map(item =>
                 item.id === id ? { ...item, complete: !crossed } : item
             );
-            setSubmittedValues([...updatedValues]); 
+            setSubmittedValues([...updatedValues]);
         } catch (error) {
             console.error('Error updating todo:', error.message);
         }
@@ -79,7 +108,7 @@ function Home() {
         try {
             const response = await axios.delete(`http://localhost:4000/deleteTodo/${id}`);
 
-            if (!response.status === 200) { 
+            if (!response.status === 200) {
                 throw new Error('Failed to delete todo');
             }
 
@@ -91,46 +120,83 @@ function Home() {
     };
 
 
+    const openModal = () => {
+        setModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalOpen(false);
+    };
+
     return (
         <>
-            <div className="flex justify-center items-center">
-                <div className="w-[800px] bg-slate-200">
+
+            <div className="w-full h-full bg-slate-200">
+                <div className="flex flex-row justify-center">
                     <h1 className="flex justify-center mt-4 font-bold text-2xl">To-Do Form</h1>
-                    <div className="flex flex-row justify-center">
-                        <form onSubmit={handleSubmit(addTodoList)}>
-                            <input
-                                type="text"
-                                placeholder="title"
-                                {...register('title', { required: 'Title is required' })}
-                                className="mt-4 w-[400px] h-[44px] px-2 py-1 border border-gray-300
+                    <img className="absolute top-0 right-4 mt-2 mr-2 w-12 h-12 ml-10 object-cover rounded-full cursor-pointer" src={profile} alt="Loading..." onClick={openModal} />
+                    {
+                    modalOpen && (
+                        <div className="fixed top-0 left-0 z-50 w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
+                            <div className="bg-white p-6 rounded-lg shadow-md z-50">
+                                <h2 className="text-xl font-semibold mb-2">{userId.user.user_name}</h2>
+                                <p className="text-gray-600 mb-2">User Id: {user_id}</p>
+                                <p className="text-gray-600 mb-2">Phone Number: {userId.user.phone_number}</p>
+                                <p className="text-gray-600 mb-2">Email: {userId.user.email}</p>
+                                <button onClick={closeModal} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Close</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <div className="flex flex-row justify-center">
+                    <form onSubmit={handleSubmit(addTodoList)}>
+                        <input
+                            type="text"
+                            placeholder="title"
+                            {...register('title', { required: 'Title is required' })}
+                            className="mt-4 w-[400px] h-[44px] px-2 py-1 border border-gray-300
                                 placeholder-gray-500 text-gray-700 rounded-md
                                 focus:outline-none focus:ring-indigo-500
                                 focus:border-indigo-500"
-                            />
-                            <button type="submit" className="mt-4 mb-2 ml-2 px-4 h-11 w-[100px] text-white bg-violet-500 hover:bg-violet-600 rounded-md">Submit</button>
-                        </form>
-                    </div>
-                    <div className="flex justify-center">
-                        <ul>
-                            {submittedValues.map((item) => (
-                                <div className="flex flex-row mb-2" key={item.id}>
-                                    <div className={`flex items-center justify-center rounded-md h-10 w-[500px] ${item.complete ? 'bg-black' : 'bg-slate-500'} text-white ${item.complete ? 'line-through' : ''}`}>
-                                        <p>{item.title}</p>
-                                    </div>
-                                    <button className="ml-4 h-10 w-[40px] text-white bg-green-500 hover:bg-green-600 rounded-md flex items-center justify-center" onClick={() => updateTodo(item.id, item.complete)}>
-                                        <TiTickOutline className="h-7 w-7" />
+                        />
+                        <button type="submit" className="mt-4 mb-2 ml-2 px-4 h-11 w-[100px] text-white bg-violet-500 hover:bg-violet-600 rounded-md">Submit</button>
+                    </form>
+                </div>
+
+
+                <div className="flex flex-wrap justify-center">
+                    {submittedValues.map((item) => (
+                        <div className="w-[380px] flex-initial mx-2 my-4 relative" key={item.id}>
+                            <div className={`p-6 bg-white border border-gray-200 rounded-lg shadow ${item.complete ? 'bg-gray-300' : 'dark:bg-gray-800'}  dark:border-gray-700`}>
+                                <div className=" flex justify-center items-center rounded-full h-8 w-8 bg-blue-500 hover:bg-blue-600 hover:cursor-pointer absolute top-0 right-0 mt-2 mr-2">
+                                <AiOutlineEdit className="h-6 w-6 fill-white hover:fill-blue-200"/>
+                                </div>
+                                <div className="flex mb-4">
+                                    {/* <div className={`flex items-center justify-center rounded-md h-10 w-full mr-10 ${item.complete ? 'bg-black' : 'bg-slate-500'} text-white ${item.complete ? 'line-through' : ''}`}> */}
+                                        <p className={`flex items-start justify-start font-bold h-10 w-full mr-10 ${item.complete ? 'text-black' : 'text-white'}  ${item.complete ? 'line-through' : ''}`}>{item.title}</p>
+                                    {/* </div> */}
+                                </div>
+                                <div className="flex justify-between">
+                                    <button className="ml-4 h-10 w-[80px] text-white bg-green-500 hover:bg-green-600 rounded-md flex items-center justify-center" onClick={() => updateTodo(item.id, item.complete)}>
+                                        {/* <TiTickOutline className="h-7 w-7" /> */}
+                                        <p className="font-bold">{item.complete ? "Undo" : "Complete"}</p>
                                     </button>
-                                    <button className="ml-4 h-10 w-[40px] text-white bg-red-500 hover:bg-red-600 rounded-md flex items-center justify-center" onClick={() => deleteTodo(item.id)}>
-                                        <AiOutlineDelete className="h-6 w-6" />
+                                    <button className="ml-4 h-10 w-[80px] text-white bg-red-500 hover:bg-red-600 rounded-md flex items-center justify-center" onClick={() => deleteTodo(item.id)}>
+                                        {/* <AiOutlineDelete className="h-6 w-6" /> */}
+                                        <p className="font-bold">Delete</p>
                                     </button>
                                 </div>
-                            ))}
-                        </ul>
-                    </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
+
+
+
             </div>
         </>
     );
 }
 
 export default Home;
+
