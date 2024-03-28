@@ -21,12 +21,28 @@ router.get("/gettodo", (req, res) => {
         });
 });
 
+router.get("/gettodo/:id", (req, res) => {
+    const userId = req.params.id;
+    pool.query(`SELECT * FROM todo WHERE user_id = ${userId};`)
+        .then((response) => {
+            console.log('Todo list retrieved successfully');
+            console.log(response.rows);
+            res.json(response.rows);
+        })
+        .catch((err) => {
+            console.log(err);
+            res.status(500).send("Error retrieving todo list");
+        });
+});
+
 router.post("/addtodo", (req,res) => {
     const title = req.body["title"];
+    const user_id = req.body["user_id"];
 
     console.log("Todo List Title is " + title);
+    console.log("Todo List User Id is " + user_id);
 
-    const insertSTMT = `INSERT INTO todo (title) VALUES ('${title}');`;
+    const insertSTMT = `INSERT INTO todo (title,user_id) VALUES ('${title}','${user_id}');`;
 
     pool.query(insertSTMT).then((response)=>{
         console.log('Data Inserted');

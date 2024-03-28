@@ -19,7 +19,7 @@ function SignUp() {
         try {
             const response = await axios.post("http://localhost:4000/signup", data);
             console.log("User signed up successfully:", response.data);
-            navigate('/home');
+            navigate('/');
         } catch (error) {
             if (error.response) {
                 // The request was made and the server responded with a status code

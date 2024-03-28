@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { TiTickOutline } from "react-icons/ti";
+// import { TiTickOutline } from "react-icons/ti";
 import { AiOutlineEdit } from "react-icons/ai";
 import axios from 'axios';
 import profile from '../images/profile.jpg';
@@ -20,7 +20,11 @@ function Home() {
 
     const addTodoList = async (data) => {
         try {
-            const response = await axios.post('http://localhost:4000/addtodo', data, {
+            const todoData = {
+                ...data,
+                user_id: user_id // Include the user_id in the request body
+            };
+            const response = await axios.post('http://localhost:4000/addtodo', todoData, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -32,16 +36,31 @@ function Home() {
 
             const responseData = response.data;
             console.log(responseData);
-            setSubmittedValues([...submittedValues, { title: data.title, complete: data.complete, user_id: data.user_id }]);
+            setSubmittedValues([...submittedValues, { ...data,user_id: user_id}]);
             reset();
         } catch (error) {
             console.error('Error adding todo:', error.message);
         }
     };
 
-    const getTodoList = async () => {
+    // const getTodoList = async () => {
+    //     try {
+    //         const response = await axios.get('http://localhost:4000/gettodo');
+
+    //         if (!response.status === 200) {
+    //             throw new Error('Failed to fetch todos');
+    //         }
+
+    //         const responseData = response.data;
+    //         setSubmittedValues(responseData);
+    //     } catch (error) {
+    //         console.error('Error fetching todos:', error.message);
+    //     }
+    // };
+
+    const getUserTodoList = async () => {
         try {
-            const response = await axios.get('http://localhost:4000/gettodo');
+            const response = await axios.get(`http://localhost:4000/gettodo/${user_id}`);
 
             if (!response.status === 200) {
                 throw new Error('Failed to fetch todos');
@@ -55,8 +74,8 @@ function Home() {
     };
 
     useEffect(() => {
-        getTodoList();
-    }, []);
+        getUserTodoList();
+    });
 
     useEffect(() => {
         const getUserDetail = async () => {
@@ -131,7 +150,7 @@ function Home() {
     return (
         <>
 
-            <div className="w-full h-full bg-slate-200">
+<div className={`w-full ${submittedValues.length === 0 ? 'h-screen' : 'h-full'} bg-slate-200`}>
                 <div className="flex flex-row justify-center">
                     <h1 className="flex justify-center mt-4 font-bold text-2xl">To-Do Form</h1>
                     <img className="absolute top-0 right-4 mt-2 mr-2 w-12 h-12 ml-10 object-cover rounded-full cursor-pointer" src={profile} alt="Loading..." onClick={openModal} />
